@@ -1,0 +1,639 @@
+#An Analysis of Individual Campaign Contributions for the 2016 Presidential Election in the state of Pennsylvania#
+
+##by Scott Tse##
+April 18, 2017
+========================================================
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+# Load all of the packages that you end up using in your analysis in this code
+# chunk.
+
+# Notice that the parameter "echo" was set to FALSE for this code chunk. This
+# prevents the code from displaying in the knitted HTML output. You should set
+# echo=FALSE for all code chunks in your file, unless it makes sense for your
+# report to show the code that generated a particular plot.
+
+# The other parameters for "message" and "warning" should also be set to FALSE
+# for other code chunks once you have verified that each plot comes out as you
+# want it to. This will clean up the flow of your report.
+library(ggthemes)
+library(ggplot2)
+library(dplyr)
+library(RColorBrewer)
+library(rgeos)
+library(maptools)
+library(maps)
+library(mapdata)
+library(ggmap)
+library(scales)
+```
+
+```{r echo=FALSE, Load_the_Data}
+# Load the Data
+pa_data <- read.csv("P00000001-PA.csv", row.names=NULL)
+candidates <- read.csv("CandidateSummaryAction.csv",row.names=NULL, quote="")
+
+# get back to dataframe without quotes
+candidates <- as.data.frame(sapply(candidates, function(x) gsub("\"", "", x)))
+```
+
+
+##Introduction##
+
+The Federal Election Commission collects and maintains campaign finance contribution data for each election cycle. The FEC's mission is to administer and enforce the Federal Election Campaign Act (FECA) whose laws provide limits for political contributions and oversee public funding to presidential campaigns. Maintaining fairness and ethics in elections is perceived to be an important aspect of democracy in the US.This dataset, obtained from the [FEC website](http://fec.gov/disclosurep/pnational.do) is comprised of individual's contribution data for the state of Pennsylvania for the 2016 presidential campaign cycle. 
+
+In the aftermath of the 2016 US presidential election and the suprising election of Donald Trump, I wanted to look at a state has been traditionally "blue" in recent history but went "red" in the last election. Regardess of political affiliation, most agree that President Trump's populist ascendancy and election were unexpected and many pundits predicted he would lose the election to Hillary Clinton. 
+
+In this report, I perform an exploratory data analysis of this dataset and attempt to explore several research questions such as the following:
+
+* How much money was contributed in Pennsylvania?
+* How much did each candidate/political party recieve?
+* Did this change over time?
+* How do contributions vary over geography?
+* Is there anything in the dataset that gave hints to Trump's rise or the eventual election result?
+
+A description of the dataset if provided below. The data dictionary was obtained from the FEC site:
+ftp://ftp.fec.gov/FEC/Presidential_Map/2016/DATA_DICTIONARIES/CONTRIBUTOR_FORMAT.txt
+
+
+
+**Data Dictionary**
+
+*Data Type:  S = string (alpha or alpha-numeric); D = date; N = numeric*  
+
+|Variable  | Description    | Data Type    |Full Description                                                    |
+|----------|----------------|--------------|--------------------------------------------------------------------|
+|CMTE_ID	 | COMMITTEE ID   |			S        |9-character alpha-numeric code assigned to a committee by the Federal Election Commission| 
+|CAND_ID	 | CANDIDATE ID		|		  S        |9-character alpha-numeric code assigned to a candidate by the Federal Election Commission
+|CAND_NM|			CANDIDATE NAME|				S|
+|CONTBR_NM|		CONTRIBUTOR NAME|			S|Reported name of the contributor.
+|CONTBR_CITY|		CONTRIBUTOR CITY|			S|Reported city of the contributor.
+|CONTBR_ST|		CONTRIBUTOR STATE	|		S|Reported state of the contributor
+CONTBR_ZIP|		CONTRIBUTOR ZIP CODE|			S|Reported zip code of the contributor
+CONTBR_EMPLOYER|		CONTRIBUTOR EMPLOYER	|		S|Reported employer of the contributor
+CONTBR_OCCUPATION	|CONTRIBUTOR OCCUPATION|		S|Reported occupation of the contributor
+CONTB_RECEIPT_AMT	|CONTRIBUTION RECEIPT AMOUNT	|	N|Reported contribution amount
+CONTB_RECEIPT_DT|	CONTRIBUTION RECEIPT DATE	|	D	|Reported contribution receipt date.  The date format is DD-MMM-YYYY
+RECEIPT_DESC	|	RECEIPT DESCRIPTION	|		S |Additional information reported by the committee about a specific contribution
+MEMO_CD	|		MEMO CODE	|			S|'X' indicates the reporting committee has provided additional text to describe a specific contribution.  See the MEMO TEXT
+MEMO_TEXT	|	MEMO TEXT		|		S|Additional information reported by the committee about a specific contribution
+FORM_TP	|		FORM TYPE			|	S|Indicates what schedule and line number the reporting committee reported a specific transaction. 
+FILE_NUM	|	FILE NUMBER	|			N|A unique number assigned to a report and all its associated transactions.
+TRAN_ID		|	TRANSACTION ID	|			S|A unique identifier permanently associated with each itemization or transaction appearing in an FEC electronic file
+ELECTION_TP	|	ELECTION TYPE/PRIMARY GENERAL INDICATOR |S|This code indicates the election for which the contribution was made. EYYYY (election plus election year)
+
+
+# Univariate Plots Section
+
+```{r echo=FALSE} 
+str(pa_data)
+```
+
+The original dataset consists of 19 variables. Note that the "X" variable, was a dummy column created as an artifact of the import process. It is interesting to note that the original dataset only has one continous numerical value `contb_receipt_amt`. The other variables are factor categorical variables or unique identifiers. 
+
+We start by looking at the distrubtion of the single numerical variable.
+
+
+```{r echo=FALSE} 
+ggplot(data = pa_data, aes(x= "all contributions", y=contb_receipt_amt)) +
+  geom_boxplot()
+```
+
+If one looks at just the distribution of all contributions in the dataframe, we can see that there are both positive and negative contributions, which seems strange. There is also a large negative outlier around -90000 dollars. Further research revealed that negative contributions are refunds that can occur for several reasons such as invalid donor ID, over limit contributions, and other reasons. The large negative outlier looks like a very large refund to a particular donor.
+
+Another way we might look at contributions then is to sum the total net contribution (sum of all contributions minus refunds) and then plot those values on a boxplot.
+
+
+```{r echo=FALSE} 
+pa_data.contb_receipt_amt_by_donor <- pa_data %>%
+  group_by(contbr_nm) %>%
+  summarise(net_donations = sum(contb_receipt_amt),
+            transactions = n()) %>%
+  arrange(-net_donations)
+head(pa_data.contb_receipt_amt_by_donor)
+```
+
+
+```{r echo=FALSE} 
+# boxplot of net_donations
+ggplot(data = pa_data.contb_receipt_amt_by_donor, aes(x= "all individuals", y=net_donations)) +
+  geom_boxplot()
+```
+
+
+
+```{r echo=FALSE} 
+tail(pa_data.contb_receipt_amt_by_donor)
+```
+
+
+The large negative outlier is the total net contribtuion of the individual in the dataset 'Carangi, Joe'. We also see many other individuals who have negative net contribution amounts. In the specific case of 'Carangi, Joe' I was able to find a [letter](http://docquery.fec.gov/pdf/847/201605100300045847/201605100300045847.pdf) written by the FEC to the Bernie Sanders campaign which cited a number of non-compliant contributions and transactions from 'Carangi, Joe' do appear in this letter. My conclusion then is that this individual, along with others in the dataset who have negative net contributions, were found to violate contribution rules in some way and thus had contributions refunded.
+
+With an understanding of what negative contributions mean, I then look at subsetting just postive contributions as a metric of support for candidate or political party.
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE} 
+# histogram of all positive contributions
+pa_data %>% 
+  subset(contb_receipt_amt>0) %>%
+ggplot(aes(x=contb_receipt_amt)) +
+  geom_histogram(binwidth = 25) +
+  scale_x_continuous(breaks=seq(0,3000,100), lim=c(0,3000))
+
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE} 
+# histograms of contribution amounts, faceted by candidate
+pa_data %>% 
+  subset(contb_receipt_amt>0) %>%
+ggplot(aes(x=contb_receipt_amt)) +
+  facet_wrap(~ cand_nm) +
+  geom_histogram(binwidth = 25) +
+  scale_x_continuous(lim = c(0,3000))
+```
+
+In the faceted histograms above, we can compare the distribution of contribution counts by candidate. We see that most candidate barely register using the existing y axis scale. Althogh hard to tell from the scale, distributions appear rigtht skewed. This makes sense since the contribution amounts have been subsetted to values exceeding zero.
+
+
+
+
+# Univariate Analysis
+
+After some preliminary exploration of the dataset, we understand that the original dataset has effectively 18 variables. There are 243,795 observations, each corresponding to a contribution transaction that occured within the state of Pennyslvania during the 2016 presidential election cycle.
+
+### What is/are the main feature(s) of interest in your dataset?
+
+The main features of interest are the contribution amounts, candidate names, date of transaction and other categorical variables such as city, zipcode. 
+
+### What other features in the dataset do you think will help support your \
+Because I want to see if there is anyting in the dataset which foreshadows Trump's eventual victory, I want to pay special attention to trends over time, especially transaction numbers and net donation amounts. 
+
+### Did you create any new variables from existing variables in the dataset?
+Yes, I created several:
+* created a new variable `can_par_aff` (candidate party affiliation) by merging the candidates dataframe which served as a lookup table for candidate's respective party affiliation.
+* created a new variable `zip` which normalizes zipcodes to a 5 digit standard for later joining to shapefiles for zip codes downloaded from data.gov 
+* Often, I aggregated the sum of donations to a `net donations` variable and looked at the ratio of net donations to transaction.
+* for timeseries analysis, I created variables `Week` and `Month` to enable time based aggregations for easier visualization.
+
+
+
+### Of the features you investigated, were there any unusual distributions? \
+Did you perform any operations on the data to tidy, adjust, or change the form \
+of the data? If so, why did you do this?
+
+Yes, I thought that the distribution of `contbr_amt` was strange since it included not only a large number of negative values, but some very large negative values at that. At various times in my analysis, sometimes I subset the dataset to ignore negatives, and other times I look at aggregations of all transaction. 
+
+
+# Bivariate and Multivariate Plots Section
+
+After investigating some of the distributions of contributions by candidate, it would also be useful to look at how the data is distributed by candidate party affiliation.
+
+In order to assign a political party affiliation to each candidate and transaction in the dataset I acquired a table of all presidential candidates from the [FEC website](http://www.fec.gov/data/CandidateSummary.do?format=html&election_yr=2016). This `candidates` dataframe was then merged with the `pa_data` dataframe, joining on `cand_id` to enable summaries and visualizations. Here is the lookup table after importing into R:
+
+
+```{r echo=FALSE} 
+#subset candidates df with only the needed columns (can_id, can_nam, can_par_aff)
+myvars <- c(2,3,8)
+candidates.cleaned <- candidates[myvars]
+colnames(candidates.cleaned)[1] <- "cand_id"
+head(candidates.cleaned)
+```
+
+
+```{r}
+#merge candidates.cleaned and pa_data to add candidate party affiliation to dataframe
+pa_merged <- merge(pa_data,candidates.cleaned,by="cand_id")
+```
+
+
+What was the ratio of total transactions for Democratic versus Republican candidates?
+
+```{r echo=FALSE} 
+# what was the total split in transactions by party?
+pa_merged %>%
+  summarise(dem_trans = sum(can_par_aff == "DEM"),
+            rep_trans = sum(can_par_aff == "REP"),
+            dem_rep_ratio = dem_trans/rep_trans) %>%
+  arrange(desc(dem_rep_ratio))
+```
+
+Contribution-wise, Pennsylvina was heavily tilted to the Democratic party. The ratio of contribution transactions for Democratic vs Republican candiates was about 2.8 to 1.
+
+
+```{r echo=FALSE} 
+# what was the total split in net donations by party?
+net_donations_by_party <-
+pa_merged %>%
+  subset(contb_receipt_amt > 0) %>%
+  group_by(can_par_aff) %>%
+  summarise(net_donations = sum(contb_receipt_amt)) %>%
+  arrange(desc(net_donations))
+net_donations_by_party
+```
+
+```{r echo=FALSE} 
+# barplot of net donations by party
+ggplot(net_donations_by_party, 
+       aes(x="Party", y= net_donations, fill = can_par_aff)) +
+  geom_bar(stat="identity") +
+  scale_fill_manual(values=c("blue", "green", "purple", "gold", "red", "orange"))
+```
+
+
+
+For total net donations, the Democrats again come out on top, outraising Republicans by about $514K, a difference of about 49% more. The Libertarian Pary was a distant third.
+
+
+```{r echo=FALSE, Bivariate_Plots}
+# net contributions by candidate
+pa_merged.contr_by_candidate <- pa_merged %>%
+  group_by(cand_nm, can_par_aff) %>%
+  summarise(net_donations = sum(contb_receipt_amt),
+            transactions = n()) %>%
+  arrange(-net_donations)
+
+pa_merged.contr_by_candidate
+```
+
+The table above summarizes net donations and number of transactions for each candidate in the dataset. We see that Hillary Clinton by far has the most net donations as well as number of contribution transactions, followed by her opponent in the general election, Donald J. Trump, then Democratic primary runner up, Bernie Sanders, and then Republican primary runner-up, Ted Cruz.
+
+
+What is the distribution of contribution transaction by reported occupation?
+```{r echo=FALSE}
+pa_merged %>%
+  subset(contb_receipt_amt > 0) %>%
+  group_by(contbr_occupation) %>%
+  summarise(net_donations = sum(contb_receipt_amt),
+            transactions = n()) %>%
+  arrange(-net_donations)
+```
+
+There are 8470 distinct occupations in the dataset. The top 10 are listed above. Interestingly, "RETIRED"" is the top occupation with highest net donations, followed by attorney. The third category is "INFORMATION REQUESTED" which seems that an attempt was made to gather the occupation information but somehow was unsuccesful. Some work could be done to clean and compress the number of occupations in the dataset (for instance, both LAWYER AND ATTORNEY appear multiple times), but this is outside the scope of this initial analysis. Such cleaning and compression would be needed to get any value out of analyzing contribtuion by 
+
+
+```{r echo=FALSE} 
+# barplot of total net contributions by candidate, colored by party affiliation
+pa_merged.contr_by_candidate$cand_nm <- 
+  factor(pa_merged.contr_by_candidate$cand_nm, 
+         levels = pa_merged.contr_by_candidate$cand_nm[order(pa_merged.contr_by_candidate$net_donations)])
+
+ggplot(pa_merged.contr_by_candidate, aes(x = cand_nm, y = net_donations)) +
+  geom_bar(stat = "identity", aes(fill=can_par_aff)) +
+  coord_flip() +
+  scale_fill_manual(values=c("blue", "green", "purple", "gold", "red", "orange"))
+```
+
+In the barplot above we plot the net donations by candidate, colored by political party affiliation. Although Hillary Clinton is the clear leader by far, eight out of the top ten candidates for net donations are Republican.
+
+```{r echo=FALSE} 
+#barplot of number of contribution transactions by candidate, colored by party affiliation
+
+pa_merged.contr_by_candidate$cand_nm <- 
+  factor(pa_merged.contr_by_candidate$cand_nm,
+    levels = pa_merged.contr_by_candidate$cand_nm[order(
+      pa_merged.contr_by_candidate$transactions)])
+
+ggplot(pa_merged.contr_by_candidate, 
+       aes(x = cand_nm, y = transactions)) +
+  geom_bar(stat = "identity", aes(fill=can_par_aff)) +
+  coord_flip() +
+  scale_fill_manual(values=c("blue", "green", "purple", "gold", "red", "orange"))
+```
+
+A similar distribution is observed for the barplot of number of transactions for candidate, colored by part affiliation.
+
+```{r echo=FALSE} 
+#barplot of number of mean net contribtuion per transaction by candidate, colored by party affiliation
+pa_merged.contr_by_candidate$cand_nm <- 
+  factor(pa_merged.contr_by_candidate$cand_nm,
+    levels = pa_merged.contr_by_candidate$cand_nm[order(
+       pa_merged.contr_by_candidate$net_donations/pa_merged.contr_by_candidate$transactions)])
+
+ggplot(pa_merged.contr_by_candidate, 
+       aes(x = cand_nm, y = net_donations/transactions)) +
+  geom_bar(stat = "identity", aes(fill=can_par_aff)) +
+  coord_flip() +
+  scale_fill_manual(values=c("blue", "green", "purple", "gold", "red", "orange"))
+```
+
+If we look at the ratio of net_donations/transaction which gives us a measure of the size of each donation recieved per candidate, the leading candidates are on the smaller end of the scale. Although interesting to observe, this chart does not appear to have much significance since the candidates who dominate the election cycle do not have the higher net_donations per transaction. Top net_donation per transaction candidates Chris Christie, Martin O'Malley, and Jeb Bush all fell by the wayside fairly early during the primary season.
+
+```{r echo=FALSE} 
+pa_merged %>% 
+  subset(contb_receipt_amt>0) %>%
+  group_by(contbr_city, can_par_aff) %>%
+    summarise(net_donations = sum(contb_receipt_amt),
+            transactions = n()) %>%
+  arrange(-net_donations, contbr_city)
+  
+```
+
+In the table above, we explore the net_donations and number of transactions per city for each party affiliation. As expected, we see the major metro areas of Philadelphia and Pittburgh at the top of the list. Seven out of the top 10 city-party aggregated net donations are for Democratic candidates, which seems consistent with the widely known fact that major urban population centers tend to vote Democratic.
+
+
+
+```{r echo=FALSE} 
+# look at contributions by zip code
+pa_merged.contr_by_zip  <- pa_merged %>%
+  group_by(contbr_zip) %>%
+  summarise(net_donations = sum(contb_receipt_amt),
+            transactions = n()) %>%
+  arrange(-net_donations)
+
+pa_merged.contr_by_zip
+```
+
+When we look at distribution of zip codes, we see 29K zip codes which is impossible since it exceeds the total number in Pennsylvania! I noticed many are 5 digit but some are 9 digit. I the create a column with only zips truncated to only 5 digits.
+
+```{r echo=FALSE} 
+# create new column zip with truncated zip codes 
+pa_merged$zip <- substr(pa_merged$contbr_zip, 0, 5)
+```
+
+
+```{r echo=FALSE} 
+# create summary table
+pa_merged.contr_by_zip  <- pa_merged %>%
+  group_by(zip) %>%
+  summarise(net_trans_dem = sum(can_par_aff == "DEM"),
+            net_trans_rep = sum(can_par_aff == "REP"),
+            fraction_dem = (net_trans_dem/(net_trans_rep+net_trans_dem)),
+            net_donations = sum(contb_receipt_amt),
+            transactions = n()) %>%
+  arrange(-fraction_dem)
+
+pa_merged.contr_by_zip
+```
+
+Only 1639 rows coresponding to distinct zip codes now. Much better. 
+
+```{r echo=FALSE} 
+ggplot(pa_merged.contr_by_zip, aes(x = zip, y = net_donations)) +
+  geom_bar(stat = "identity") +
+  coord_flip()
+```
+
+Visualizing net donations by zip code this way is not very helpful. The number of zipcodes and lack of spatial context are not informative. 
+
+# Analysis
+
+In the plots above, we added the dimension of party affiliation to see how the data looked when broken down by party. We can clearly see the edge in fundraising that the Democratic party had in Pennsylvania, and more specifically, Hillary Clinton's dominance in that state, eclipsing all other candidates of both parties. While the Democratic party's contributions were concentrated among its two main candidates, the Republican contributions were distributed amongst a larger pool of individuals. We could also see in the data that Bernie Sanders was the third hightest candidate for fundraising, yet had the smallest amount per transaction, perhaps reflecting the grassroots and populist nature of his campaign. The Libertarian and Green party barely register in the contribution data. 
+
+
+
+As metioned above, I attempt visualzing the zipcode data in choropleth maps. Using QGIS, I edited a shapefile of USA shapefiles clipped to just Pennsylvania and load it into R.
+
+```{r}
+pa_zips2 <- readShapeSpatial("pa_zip_gm.shp")
+names(pa_zips2)
+```
+
+```{r echo=FALSE} 
+head(pa_zips2$ZCTA5CE10)
+class(pa_zips2)
+```
+
+Test plotting shapefiles for Pennsylvania zipcodes.
+```{r echo=FALSE} 
+plot(pa_zips2)
+```
+
+```{r echo=FALSE} 
+# fortify shapefile to convert to dataframe, set region to zipcodes
+pa_zips2 <- fortify(pa_zips2, region = "ZCTA5CE10") 
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE} 
+ggplot() + 
+  geom_map(data = pa_merged.contr_by_zip, 
+                    aes(map_id = zip, fill = net_donations), map = pa_zips2) + 
+  expand_limits(x = pa_zips2$long, y = pa_zips2$lat) +
+    scale_fill_distiller(name="Net Donations", palette = "BrBG",
+                         trans = "log")
+```
+
+In the choropleth above, we have shaded polygons corresponding to zipcodes, colored by the log of net donations. I peformed the transformation to better contrast each zip code. As expected, we can see that the zipcodes around dense major metro areas surrounding Pittsburg in the SW  as well as Philadelphia in the SE of the state show the highest net donations. 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE} 
+ggplot() + 
+  geom_map(data = pa_merged.contr_by_zip, 
+                    aes(map_id = zip, fill = transactions), map = pa_zips2) + 
+  expand_limits(x = pa_zips2$long, y = pa_zips2$lat) +
+    scale_fill_distiller(name="# of Transactions", 
+                         palette = "BrBG", breaks = pretty_breaks(n = 5))
+```
+In the choropleth above, we have shaded polygons corresponding to zipcodes, colored by number of transactions. Similar to the choropleth of net donations by zipcode, Philadelpha and Pittsburg areas show highest number of transactions.
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE} 
+# % Democratic transactions by zip
+ggplot() + 
+  geom_map(data = pa_merged.contr_by_zip, 
+                    aes(map_id = zip, fill = fraction_dem), map = pa_zips2) + 
+  expand_limits(x = pa_zips2$long, y = pa_zips2$lat) +
+    scale_fill_distiller(name="Fraction Democratic", palette = "RdBu", 
+                         direction = 1, # reverse color palette
+                         breaks = pretty_breaks(n = 5))
+```
+
+The choropleth above plots fraction of transactions to Democratic candidates for each zip code. This plot is quite interesting since one can see quite a diverse spectrum throughout the state. Philadelpia and its surrounding areas are clearly blue, but once can see very deep pockets of red throughout the state especially in the central portion of the state. In this central area, pockets of deep blue lay adjacent often times to areas of deep red. In addition, the area around Pittsburg does not appear as monolithically blue as Philadelphia, perhaps indicating more political diversity. The city of Pittsburg itself is a blue zone, but it quickly shifts to lighter blue and light red in suburban zones. 
+
+I also wanted to investigate how the varialbes behaved over the dimension of time. 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# donations over time
+pa_merged %>%
+  filter(cand_nm == c("Trump, Donald J.", "Clinton, Hillary Rodham")) %>%
+  subset(contb_receipt_amt>0) %>%
+ggplot(aes(x= contb_receipt_dt, y = contb_receipt_amt)) +
+  geom_jitter(aes(color = cand_nm), alpha = .75, size = .5) +
+  scale_y_log10()
+```
+
+Above, I attempt to scatterplot all contribution amounts over the election cycle to see if one can discern any clear trend. There isn't anyting obvious to pick up here. In order to see anything meaningful, I needed to do some time aggregations and make some line plots.
+
+
+```{r echo=FALSE} 
+pa_merged_test <- pa_merged
+pa_merged_test$contb_receipt_dt <- as.Date(pa_merged_test$contb_receipt_dt,
+  "%d-%b-%y") 
+```
+
+```{r}
+sapply(pa_merged_test,class)
+```
+
+
+```{r echo=FALSE} 
+pa_merged_test$Week <- as.Date(cut(pa_merged_test$contb_receipt_dt,
+  breaks = "week",
+  start.on.monday = FALSE))
+
+pa_merged_test$Month <- as.Date(cut(pa_merged_test$contb_receipt_dt,
+  breaks = "month"))
+```
+
+
+After creating `Week` and `Month` variables, we check the dataframe to verify the datatypes.
+```{r echo=FALSE} 
+sapply(pa_merged_test,class)
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE} 
+# graph by month:
+pa_merged_test %>%
+  subset(contb_receipt_amt > 0) %>%
+ggplot(aes(Month, contb_receipt_amt)) +
+  stat_summary(fun.y = sum, geom = "line")   # adds up all observations for the month
+```
+
+This plot of all contributions aggregated by month shows the increasing trend of contributions leading up to election day. Other than some periodic dips the trend is increasing from the first half of 2015 through late 2016.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+pa_merged_test %>%
+  subset(contb_receipt_amt > 0) %>%
+ggplot(aes(Month, contb_receipt_amt)) +
+  geom_line(aes(color = cand_nm), stat = "summary",
+                fun.y = sum) +
+  #scale_y_continuous(lim = c(0,15000)) +
+  theme(legend.position = "bottom")
+```
+
+This plot of contributions by week for each candidate shows the two presidential candidates for each respective party rising above the fray during the late stages of the primaries and then through November 2016. 
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# just compare contb_receipt/month for Trump and Hillary
+target <- c("Trump, Donald J.", "Clinton, Hillary Rodham")
+pa_merged_test %>%
+  filter(cand_nm %in% target)  %>%
+  subset(contb_receipt_amt > 0) %>%
+ggplot(aes(Month, contb_receipt_amt)) +
+  geom_line(aes(name="Candidate", color = cand_nm),
+            stat = "summary",
+            fun.y = sum) +
+  #scale_y_continuous(lim = c(0,15000)) +
+  theme(legend.position = "bottom")
+```
+
+
+This plot is similar to the on above, but we only look at the two eventual major party nominees. Interestingly, Trump's fundraising in Pennsylvania does not start to rise significantly until around May 2016 which seems to conincide with the Pennsylvaia primary which was held on April 26. Clinton's contributions also reach an inflection point at the same time, but her contributions were higher and already rising in the year before the 2016 primary.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# just compare Trump and Hillary by week
+
+pa_merged_test %>%
+  filter(cand_nm %in% target)  %>%
+  subset(contb_receipt_amt > 0) %>%
+  ggplot(aes(Week, color = cand_nm)) +
+  geom_freqpoly()
+```
+
+This is a similar weekly timeseries plot, comparing number of weekly transactions for the two candidates.
+
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# area plot of donations by party over time
+pa_merged_test %>%
+  subset(contb_receipt_amt > 0) %>%
+  ggplot(aes(x=Month,y=contb_receipt_amt,fill=can_par_aff)) + 
+  geom_area(aes(color = can_par_aff), stat = "summary",
+                fun.y = sum) +
+  scale_fill_manual(values=c("blue", "green", "purple", "gold", "red", "orange"))
+```
+
+# Analysis
+
+From the timeseries plots above, we see some interesting trends. We see the general trend of increasing contributions coming to a crescendo at the time of the November 2016 general election. We can also see that Trump's contribution activity is quite muted until he wins the state primary in late April 2016. Even then, his contributions rise quite quickly but then plateau in June 2016 whereas Clinton's contributions continue to rise steeply until the general election. 
+
+------
+
+# Final Plots and Summary
+
+In my opinion, these were the three most interesting plots from EDA: 1) Net Donations by Candidate, 2) Fraction of Contributions to Democratic Party by Zipcode, and 3) Candidate Contributions by Month.
+
+### Plot One
+```{r echo=FALSE, Plot_One}
+# barplot of total net contributions by candidate, colored by party affiliation
+pa_merged.contr_by_candidate$cand_nm <- 
+  factor(pa_merged.contr_by_candidate$cand_nm, 
+         levels = pa_merged.contr_by_candidate$cand_nm[order(pa_merged.contr_by_candidate$net_donations)])
+
+
+ggplot(pa_merged.contr_by_candidate, 
+       aes(x = cand_nm, y = net_donations)) +
+  geom_bar(stat = "identity", aes(fill=can_par_aff)) +
+  scale_y_continuous(labels = dollar,
+                     lim = c(0,13000000),
+                     breaks =seq(0,1.5e7,2.5e6)) +
+  coord_flip() +
+  scale_fill_manual(name="Party Affiliation",
+                    values=c("blue", "green", "purple", "gold", "red", "orange")) +
+  theme_fivethirtyeight() +
+  labs(x = "Net Donations", y = "Candidate",
+       title = "Net Donations by Candidate")
+```
+
+### Description One
+For total net contributions, Hillary Clinton dominates the landscape, out-raising all of her opponents and more than doubling the total of Donald Trump within the state. Republican candidates, however, comprise 8 of the top 10 candidates, illustrating the larger field in that party's primary for this election cycle.
+
+### Plot Two
+```{r echo=FALSE, Plot_Two}
+# % Democratic transactions by zip
+ggplot() + 
+  geom_map(data = pa_merged.contr_by_zip, 
+                    aes(map_id = zip,
+                        fill = fraction_dem), map = pa_zips2) + 
+  expand_limits(x = pa_zips2$long, y = pa_zips2$lat) +
+    scale_fill_distiller(name="Fraction Democratic", palette = "RdBu", 
+                         direction = 1, # reverse color palette
+                         breaks = pretty_breaks(n = 5)) +
+  theme_fivethirtyeight() +
+  theme(
+  axis.text.x = element_blank(),
+  axis.text.y = element_blank(),
+  axis.ticks = element_blank()) +
+  labs(title = "Fraction of Contributions to Democratic Party by Zipcode",
+       x = "Pennsylvania Zipcodes",
+       y = "")
+```
+
+### Description Two
+This plot helps show the relative contribution support of Democratic Candidates over teh state. We see stronger financial Democratic support especially in the East portion of the state near Philadelphia. Pittsburg also appears to have a cluster of zipcodes leaning Democratic, but seems more balanced, politically. The visualizaiton appears to support the conventional wisdom that dense urban areas tend to support the Democratic Party whereas exurb and rural regions tend to support the Republican party. It would be interesting to compare this plot for the previous election cycles where Pennsylvania voted Democratic.
+
+### Plot Three
+```{r echo=FALSE, Plot_Three}
+# just compare contb_receipt/month for Trump and Hillary
+target <- c("Trump, Donald J.", "Clinton, Hillary Rodham")
+pa_merged_test %>%
+  filter(cand_nm %in% target)  %>%
+  subset(contb_receipt_amt > 0) %>%
+ggplot(aes(Month, contb_receipt_amt)) +
+  geom_line(aes(color = cand_nm), stat = "summary",
+                fun.y = sum) +
+  scale_y_continuous(labels = dollar) +
+  theme_fivethirtyeight() +
+  labs(title = "Candidate Contributions by Month",
+       x = "Month",
+       y = "Contributions") +
+  theme(legend.title=element_blank()) # get rid of legend title
+  
+```
+
+### Description Three
+This plot of monthly contribution totals for each nominee shows Hillary dominating Donald Trump within the state. Trump's fundraising looks to plateau by June of 2016, whereas Hillary is able to ride another fundraising bump in Septeber and October before the general election.
+
+
+------
+
+# Reflection
+
+This EDA excercise and journey through Pennsylvania's contribution data for last general election was interesting. It enalbed me to try out some of R's spatial analysis capabilties using packages I had not previously been exposed to yet (rgeos, maps, mapdata, maptools). I had some trouble layering geom_map objects onto a basemap however, so an obvious next step is to further experiment and practice building basemaps. I was able to pull up basemaps using maptools and ggmap but layering the choropleth polygons proved problematic. I was able to get a decent enough visualization without basemaps but it would certainly be appropriate for the next exercise.
+
+I was hoping to find some information or trend in the contribution data which might have proved prescient regarding Donald Trump's eventual general election victory. However, after investigating the contribution data overall as well as over time, it's difficult to see any metric that indicated that Trump would eventually win Pennsylvania. In fact, given how close the election was there, I thought the contribution data would also reflect this parity. The opposite was in true, since Hillary Clinton so obviously dominated fundraising. My conclusion is that for at least the last election cycle, fundraising performance within the state was not a good predictor of general election support. There were seemingly many voters who turned out for Trump that did not contribute in advance.  
+
+

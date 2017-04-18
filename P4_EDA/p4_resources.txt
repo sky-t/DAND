@@ -1,0 +1,9 @@
+List of resources used for P4 Final Project:
+
+http://www.cookbook-r.com/Graphs/Axes_(ggplot2)/
+http://adv-r.had.co.nz/Style.html
+https://www.google.com/search?q=axis+labels+r&ie=utf-8&oe=utf-8
+https://trinkerrstuff.wordpress.com/2013/07/05/ggplot2-chloropleth-of-supreme-court-decisions-an-tutorial/
+http://rforpublichealth.blogspot.com/2015/10/mapping-with-ggplot-create-nice.html
+http://ggplot2.tidyverse.org/reference/geom_map.html
+https://cran.r-project.org/web/packages/ggthemes/vignettes/ggthemes.html
