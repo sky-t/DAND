@@ -1,10 +1,15 @@
 #An Analysis of Individual Campaign Contributions for the 2016 Presidential Election in the state of Pennsylvania#
 
-##by Scott Tse##
+by Scott Tse
 
-April 18, 2017
+April 20, 2017
 
 ========================================================
+
+
+
+
+
 
 
 
@@ -27,6 +32,7 @@ In this report, I perform an exploratory data analysis of this dataset and attem
 
 A description of the dataset if provided below. The data dictionary was obtained from the FEC site:
 ftp://ftp.fec.gov/FEC/Presidential_Map/2016/DATA_DICTIONARIES/CONTRIBUTOR_FORMAT.txt
+
 
 
 
@@ -58,6 +64,9 @@ ELECTION_TP	|	ELECTION TYPE/PRIMARY GENERAL INDICATOR |S|This code indicates the
 
 # Univariate Plots Section
 
+Using the R function str() we can aquire the initial dataframe structure.
+
+
 
 ```
 ## 'data.frame':	243796 obs. of  19 variables:
@@ -82,12 +91,13 @@ ELECTION_TP	|	ELECTION TYPE/PRIMARY GENERAL INDICATOR |S|This code indicates the
 ##  $ X                : logi  NA NA NA NA NA NA ...
 ```
 
+
 The original dataset consists of 19 variables. Note that the "X" variable, was a dummy column created as an artifact of the import process. It is interesting to note that the original dataset only has one continous numerical value `contb_receipt_amt`. The other variables are factor categorical variables or unique identifiers. 
 
 We start by looking at the distrubtion of the single numerical variable.
 
 
-![](P4_final_project_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
 
 If one looks at just the distribution of all contributions in the dataframe, we can see that there are both positive and negative contributions, which seems strange. There is also a large negative outlier around -90000 dollars. Further research revealed that negative contributions are refunds that can occur for several reasons such as invalid donor ID, over limit contributions, and other reasons. The large negative outlier looks like a very large refund to a particular donor.
 
@@ -108,7 +118,7 @@ Another way we might look at contributions then is to sum the total net contribu
 ```
 
 
-![](P4_final_project_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
 
 
 
@@ -128,69 +138,140 @@ Another way we might look at contributions then is to sum the total net contribu
 
 The large negative outlier is the total net contribtuion of the individual in the dataset 'Carangi, Joe'. We also see many other individuals who have negative net contribution amounts. In the specific case of 'Carangi, Joe' I was able to find a [letter](http://docquery.fec.gov/pdf/847/201605100300045847/201605100300045847.pdf) written by the FEC to the Bernie Sanders campaign which cited a number of non-compliant contributions and transactions from 'Carangi, Joe' do appear in this letter. My conclusion then is that this individual, along with others in the dataset who have negative net contributions, were found to violate contribution rules in some way and thus had contributions refunded.
 
-With an understanding of what negative contributions mean, I then look at subsetting just postive contributions as a metric of support for candidate or political party.
+With an understanding of what negative contributions mean, I then look at subsetting just positive contributions as a metric of support for candidate or political party and take another look at the distrubtion.
 
 
-![](P4_final_project_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
-
-![](P4_final_project_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
-
-In the faceted histograms above, we can compare the distribution of contribution counts by candidate. We see that most candidate barely register using the existing y axis scale. Althogh hard to tell from the scale, distributions appear rigtht skewed. This makes sense since the contribution amounts have been subsetted to values exceeding zero.
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
 
 
 
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
 
-# Univariate Analysis
-
-After some preliminary exploration of the dataset, we understand that the original dataset has effectively 18 variables. There are 243,795 observations, each corresponding to a contribution transaction that occured within the state of Pennyslvania during the 2016 presidential election cycle.
-
-### What is/are the main feature(s) of interest in your dataset?
-
-The main features of interest are the contribution amounts, candidate names, date of transaction and other categorical variables such as city, zipcode. 
-
-### What other features in the dataset do you think will help support your \
-Because I want to see if there is anyting in the dataset which foreshadows Trump's eventual victory, I want to pay special attention to trends over time, especially transaction numbers and net donation amounts. 
-
-### Did you create any new variables from existing variables in the dataset?
-Yes, I created several:
-* created a new variable `can_par_aff` (candidate party affiliation) by merging the candidates dataframe which served as a lookup table for candidate's respective party affiliation.
-* created a new variable `zip` which normalizes zipcodes to a 5 digit standard for later joining to shapefiles for zip codes downloaded from data.gov 
-* Often, I aggregated the sum of donations to a `net donations` variable and looked at the ratio of net donations to transaction.
-* for timeseries analysis, I created variables `Week` and `Month` to enable time based aggregations for easier visualization.
+Above, we have two visualizations of the distribution of all positive contributions in the dataset. The first is a simple historgram of the contb_receipt_amount variable and the second is also a histogram but with contb_receipt_amt log10 transformed on the x axis. In the first histogram, we can see that the distribution of contribution amounts is quite right skewed, with most contributions under $25, dropping off quite quickly in frequency, with small spikes around $250, $500, and $1000. This seems to be consistent with findings that people like to contribution in round numbers. We also see a very small blip near the range of the contribution limit of $2700, but no values above the limit. This seems to indicate that the structures in place to enforce contribution limits were effective in not allowing contributions above the $2700. Since the higher contributions amounts in the datset seem to be valid datapoints, I decided not to exclude any points on the high side of contb_receipt_amt and decided to just log transform the x axis in the second histogram in order to ajust for the right skewness of the data.
 
 
 
-### Of the features you investigated, were there any unusual distributions? \
-Did you perform any operations on the data to tidy, adjust, or change the form \
-of the data? If so, why did you do this?
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
-Yes, I thought that the distribution of `contbr_amt` was strange since it included not only a large number of negative values, but some very large negative values at that. At various times in my analysis, sometimes I subset the dataset to ignore negatives, and other times I look at aggregations of all transaction. 
+In the faceted histograms above, we can compare the distribution of contribution counts by candidate. Both the x and y axis of the histgrams have been log10 transformed. X asis was transformed to account for right skewness of the data and y axis was transformed to account for the large variation in frequency of contribution amounts between top fundraisers Hillary Clinton, Donald Trump, Bernie Sanders, and Ted Cruz versus others.
 
 
-# Bivariate and Multivariate Plots Section
+Below, we look at distribution of candidate names.
+
+
+```
+## # A tibble: 24 × 2
+##                      cand_nm      n
+##                       <fctr>  <int>
+## 1    Clinton, Hillary Rodham 119288
+## 2           Sanders, Bernard  59627
+## 3           Trump, Donald J.  30828
+## 4  Cruz, Rafael Edward 'Ted'  15544
+## 5        Carson, Benjamin S.   9800
+## 6               Rubio, Marco   3094
+## 7                 Paul, Rand   1192
+## 8            Kasich, John R.   1019
+## 9             Fiorina, Carly    965
+## 10                 Bush, Jeb    545
+## # ... with 14 more rows
+```
+
+
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+
+Above we have a summary table and barplot of the number of occurences of each candidate name (cand_nm) in the dataset. The x axis of counts (n) has been log transformed to account for the large range in n. 3 candidates have less than 10 occurences, whereas the top candidate, Hillary Clinton, has more than 100,000 occurences.
+
 
 After investigating some of the distributions of contributions by candidate, it would also be useful to look at how the data is distributed by candidate party affiliation.
 
 In order to assign a political party affiliation to each candidate and transaction in the dataset I acquired a table of all presidential candidates from the [FEC website](http://www.fec.gov/data/CandidateSummary.do?format=html&election_yr=2016). This `candidates` dataframe was then merged with the `pa_data` dataframe, joining on `cand_id` to enable summaries and visualizations. Here is the lookup table after importing into R:
 
 
+```
+##     cand_id             can_nam can_par_aff
+## 1 P60013794             DOT COM         NAP
+## 2 P60016326                 JON         PAF
+## 3 P60005840  GIFFORD WHEELER JR         IND
+## 4 P60012838               AMMAR         IND
+## 5 P60014461     PHILL ALEXANDER         DEM
+## 6 P60020690                ANDY         IND
+```
+
+
+
+
+
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+
+In the baplot above, counts of party affiliation are log transformed on the y axis. Contributions to the two major parties dominate, with counts roughly two orders of magnitude above the next nearest parties (Libertarian and Green).
+
+
+
+
+
+
+
+
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
+
+Distributions of occurances of months in the dataset shows increasing trend through the election cycle. There appears to be a spike in the first half of 2016 which drops in the second half of that year before increasing significantly in 2017.
+
+
+
+
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
+
+Tuesday and Wednesday were highest in frequency with the weekend days lowest. Apparently, the weekend does not increase giving!
+
+
 
 ```
-##     cand_id       can_id can_par_aff
-## 1 P60013794 A WANDRLUSTR         NAP
-## 2 P60016326       ABABIY         PAF
-## 3 P60005840       ABBOTT         IND
-## 4 P60012838   ABDULHAMID         IND
-## 5 P60014461  ABLEIDINGER         DEM
-## 6 P60020690         ABLO         IND
+## # A tibble: 2,091 × 2
+##      contbr_city     n
+##           <fctr> <int>
+## 1   PHILADELPHIA 32880
+## 2     PITTSBURGH 21740
+## 3   WEST CHESTER  3646
+## 4     HARRISBURG  3638
+## 5      LANCASTER  3620
+## 6  STATE COLLEGE  3052
+## 7           YORK  2871
+## 8      BETHLEHEM  2594
+## 9      ALLENTOWN  2130
+## 10       READING  2055
+## # ... with 2,081 more rows
 ```
 
+There are 2091 cities in the dataset.
+
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
+
+From the plot of top 25 cities above, we observe that the major population centers in Pennsylvania have highest frequency in the dataset.
 
 
-```r
-#merge candidates.cleaned and pa_data to add candidate party affiliation to dataframe
-pa_merged <- merge(pa_data,candidates.cleaned,by="cand_id")
-```
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
+
+The distribtuion of employers reported in the dataset is quite interesting. The top entry is N/A followed by RETIRED and then SELF-EMPLOYED. "SELF EMPLOYED"" (without hyphen) is also the 6th highest in frequency. The highest frequency actual organization is UNIVERSITY OF PENNSYLVANIA and in fact univerities dominate the top 25. 
+
+
+# Univariate Analysis
+
+After some preliminary exploration of the dataset, we understand that the original dataset has effectively 18 variables. There are 243,795 observations, each corresponding to a contribution transaction that occured within the state of Pennyslvania during the 2016 presidential election cycle.
+
+
+The main features of interest are the contribution amounts, candidate names, date of transaction and other categorical variables such as city, zipcode. Because I want to see if there is anyting in the dataset which foreshadows Trump's eventual victory, I want to pay special attention to trends over time, especially transaction numbers and net donation amounts. 
+
+I created several new variables in the dataset to support analysis:
+* created a new variable `can_par_aff` (candidate party affiliation) by merging the candidates dataframe which served as a lookup table for candidate's respective party affiliation.
+* created a new variable `zip` which normalizes zipcodes to a 5 digit standard for later joining to shapefiles for zip codes downloaded from data.gov 
+* Often, I aggregated the sum of donations to a `net donations` variable and looked at the ratio of net donations to transaction.
+* for timeseries analysis, I created variables `Week`, `Month`, and `DoW` (day of week) to enable time based aggregations for easier visualization.
+
+
+In terms of unusual distribtuions, I thought that the distribution of `contbr_amt` was strange since it included not only a large number of negative values, but some very large negative values at that. At various times in my analysis, sometimes I subset the dataset to ignore negatives, and other times I look at aggregations of all transaction. In addition, when looking at how both contribution counts and amounts are distributed among candidates, I was somewhat surprised by how concentrated everything was amongst a very few number of candidates. Lastly, I was also surprised to see that giving tapers off on the weekend.
+
+
+# Bivariate and Multivariate Plots Section
 
 
 What was the ratio of total transactions for Democratic versus Republican candidates?
@@ -202,6 +283,25 @@ What was the ratio of total transactions for Democratic versus Republican candid
 ```
 
 Contribution-wise, Pennsylvina was heavily tilted to the Democratic party. The ratio of contribution transactions for Democratic vs Republican candiates was about 2.8 to 1.
+
+
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
+
+
+
+```
+## # A tibble: 6 × 4
+##   can_par_aff      mean median      n
+##        <fctr>     <dbl>  <dbl>  <int>
+## 1         UNK 445.45455    250     11
+## 2         LIB 241.76842    100    386
+## 3         REP 167.74124     50  62584
+## 4         GRE 158.22517     50    323
+## 5         DEM  88.05186     25 177679
+## 6         IND  76.27778     50     45
+```
+
+When looking at distribution and summary statistics of contributions by party affiliation, we can observe that the median contribution amounts for Republican Candidates is double that of Democratic candidates. The mean is also almost double as well. There are also 11 contributions to candidates of unknown party affiliation averaging around $445.
 
 
 
@@ -217,7 +317,7 @@ Contribution-wise, Pennsylvina was heavily tilted to the Democratic party. The r
 ## 6         IND       3432.50
 ```
 
-![](P4_final_project_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
 
 
 
@@ -225,26 +325,34 @@ For total net donations, the Democrats again come out on top, outraising Republi
 
 
 
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
+
+
+The boxplot above allows us to quickly compare distribution of contribution amounts by candidate. 
+
+
 ```
-## Source: local data frame [24 x 4]
+## Source: local data frame [24 x 5]
 ## Groups: cand_nm [24]
 ## 
-##                      cand_nm can_par_aff net_donations transactions
-##                       <fctr>      <fctr>         <dbl>        <int>
-## 1    Clinton, Hillary Rodham         DEM    12832937.5       119288
-## 2           Trump, Donald J.         REP     4181681.3        30828
-## 3           Sanders, Bernard         DEM     2333003.3        59627
-## 4  Cruz, Rafael Edward 'Ted'         REP     1344186.2        15544
-## 5               Rubio, Marco         REP      896039.8         3094
-## 6        Carson, Benjamin S.         REP      871031.4         9800
-## 7            Kasich, John R.         REP      607373.1         1019
-## 8                  Bush, Jeb         REP      453837.0          545
-## 9   Christie, Christopher J.         REP      416191.0          307
-## 10            Fiorina, Carly         REP      318830.8          965
-## # ... with 14 more rows
+##                      cand_nm can_par_aff net_donations mean_donation
+##                       <fctr>      <fctr>         <dbl>         <dbl>
+## 1    Clinton, Hillary Rodham         DEM    12832937.5            25
+## 2           Trump, Donald J.         REP     4181681.3            40
+## 3           Sanders, Bernard         DEM     2333003.3            26
+## 4  Cruz, Rafael Edward 'Ted'         REP     1344186.2            50
+## 5               Rubio, Marco         REP      896039.8            50
+## 6        Carson, Benjamin S.         REP      871031.4            50
+## 7            Kasich, John R.         REP      607373.1           250
+## 8                  Bush, Jeb         REP      453837.0           250
+## 9   Christie, Christopher J.         REP      416191.0          1000
+## 10            Fiorina, Carly         REP      318830.8           100
+## # ... with 14 more rows, and 1 more variables: transactions <int>
 ```
 
-The table above summarizes net donations and number of transactions for each candidate in the dataset. We see that Hillary Clinton by far has the most net donations as well as number of contribution transactions, followed by her opponent in the general election, Donald J. Trump, then Democratic primary runner up, Bernie Sanders, and then Republican primary runner-up, Ted Cruz.
+
+
+The boxplot and table above allow us to quickly compare distribution of contribution amounts by candidate.  We see that Hillary Clinton by far has the most net donations as well as number of contribution transactions, followed by her opponent in the general election, Donald J. Trump, then Democratic primary runner up, Bernie Sanders, and then Republican primary runner-up, Ted Cruz.
 
 
 What is the distribution of contribution transaction by reported occupation?
@@ -266,18 +374,18 @@ What is the distribution of contribution transaction by reported occupation?
 ## # ... with 8,460 more rows
 ```
 
-There are 8470 distinct occupations in the dataset. The top 10 are listed above. Interestingly, "RETIRED"" is the top occupation with highest net donations, followed by attorney. The third category is "INFORMATION REQUESTED" which seems that an attempt was made to gather the occupation information but somehow was unsuccesful. Some work could be done to clean and compress the number of occupations in the dataset (for instance, both LAWYER AND ATTORNEY appear multiple times), but this is outside the scope of this initial analysis. Such cleaning and compression would be needed to get any value out of analyzing contribtuion by 
+There are 8470 distinct occupations in the dataset. The top 10 are listed above. Interestingly, "RETIRED"" is the top occupation with highest net donations, followed by attorney. The third category is "INFORMATION REQUESTED" which seems that an attempt was made to gather the occupation information but somehow was unsuccesful. Some work could be done to clean and compress the number of occupations in the dataset (for instance, both LAWYER AND ATTORNEY appear multiple times), but this is outside the scope of this initial analysis. Such cleaning and compression would be needed to get any value out of analyzing contribtuion by occupation.
 
 
-![](P4_final_project_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
 
 In the barplot above we plot the net donations by candidate, colored by political party affiliation. Although Hillary Clinton is the clear leader by far, eight out of the top ten candidates for net donations are Republican.
 
-![](P4_final_project_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-29-1.png)<!-- -->
 
 A similar distribution is observed for the barplot of number of transactions for candidate, colored by part affiliation.
 
-![](P4_final_project_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-30-1.png)<!-- -->
 
 If we look at the ratio of net_donations/transaction which gives us a measure of the size of each donation recieved per candidate, the leading candidates are on the smaller end of the scale. Although interesting to observe, this chart does not appear to have much significance since the candidates who dominate the election cycle do not have the higher net_donations per transaction. Top net_donation per transaction candidates Chris Christie, Martin O'Malley, and Jeb Bush all fell by the wayside fairly early during the primary season.
 
@@ -348,7 +456,7 @@ When we look at distribution of zip codes, we see 29K zip codes which is impossi
 
 Only 1639 rows coresponding to distinct zip codes now. Much better. 
 
-![](P4_final_project_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-35-1.png)<!-- -->
 
 Visualizing net donations by zip code this way is not very helpful. The number of zipcodes and lack of spatial context are not informative. 
 
@@ -360,11 +468,6 @@ In the plots above, we added the dimension of party affiliation to see how the d
 
 As metioned above, I attempt visualzing the zipcode data in choropleth maps. Using QGIS, I edited a shapefile of USA shapefiles clipped to just Pennsylvania and load it into R.
 
-
-```r
-pa_zips2 <- readShapeSpatial("pa_zip_gm.shp")
-names(pa_zips2)
-```
 
 ```
 ##  [1] "ZCTA5CE10"  "GEOID10"    "CLASSFP10"  "MTFCC10"    "FUNCSTAT10"
@@ -384,36 +487,26 @@ names(pa_zips2)
 ```
 
 Test plotting shapefiles for Pennsylvania zipcodes.
-![](P4_final_project_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-38-1.png)<!-- -->
 
 
 
 
-![](P4_final_project_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-40-1.png)<!-- -->
 
 In the choropleth above, we have shaded polygons corresponding to zipcodes, colored by the log of net donations. I peformed the transformation to better contrast each zip code. As expected, we can see that the zipcodes around dense major metro areas surrounding Pittsburg in the SW  as well as Philadelphia in the SE of the state show the highest net donations. 
 
-![](P4_final_project_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-41-1.png)<!-- -->
 In the choropleth above, we have shaded polygons corresponding to zipcodes, colored by number of transactions. Similar to the choropleth of net donations by zipcode, Philadelpha and Pittsburg areas show highest number of transactions.
 
 
-![](P4_final_project_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-42-1.png)<!-- -->
 
 The choropleth above plots fraction of transactions to Democratic candidates for each zip code. This plot is quite interesting since one can see quite a diverse spectrum throughout the state. Philadelpia and its surrounding areas are clearly blue, but once can see very deep pockets of red throughout the state especially in the central portion of the state. In this central area, pockets of deep blue lay adjacent often times to areas of deep red. In addition, the area around Pittsburg does not appear as monolithically blue as Philadelphia, perhaps indicating more political diversity. The city of Pittsburg itself is a blue zone, but it quickly shifts to lighter blue and light red in suburban zones. 
 
-I also wanted to investigate how the varialbes behaved over the dimension of time. 
-
-![](P4_final_project_files/figure-html/unnamed-chunk-29-1.png)<!-- -->
-
-Above, I attempt to scatterplot all contribution amounts over the election cycle to see if one can discern any clear trend. There isn't anyting obvious to pick up here. In order to see anything meaningful, I needed to do some time aggregations and make some line plots.
+I also wanted to investigate how the variables behaved over the dimension of time. 
 
 
-
-
-
-```r
-sapply(pa_merged_test,class)
-```
 
 ```
 ##           cand_id           cmte_id           cand_nm         contbr_nm 
@@ -424,13 +517,11 @@ sapply(pa_merged_test,class)
 ##          "factor"         "numeric"            "Date"          "factor" 
 ##           memo_cd         memo_text           form_tp          file_num 
 ##          "factor"          "factor"          "factor"         "integer" 
-##           tran_id       election_tp                 X            can_id 
+##           tran_id       election_tp                 X           can_nam 
 ##          "factor"          "factor"         "logical"          "factor" 
-##       can_par_aff               zip 
-##          "factor"       "character"
+##       can_par_aff              Week             Month               DoW 
+##          "factor"            "Date"            "Date"          "factor"
 ```
-
-
 
 
 
@@ -445,35 +536,35 @@ After creating `Week` and `Month` variables, we check the dataframe to verify th
 ##          "factor"         "numeric"            "Date"          "factor" 
 ##           memo_cd         memo_text           form_tp          file_num 
 ##          "factor"          "factor"          "factor"         "integer" 
-##           tran_id       election_tp                 X            can_id 
+##           tran_id       election_tp                 X           can_nam 
 ##          "factor"          "factor"         "logical"          "factor" 
-##       can_par_aff               zip              Week             Month 
-##          "factor"       "character"            "Date"            "Date"
+##       can_par_aff              Week             Month               DoW 
+##          "factor"            "Date"            "Date"          "factor"
 ```
 
 
-![](P4_final_project_files/figure-html/unnamed-chunk-34-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-45-1.png)<!-- -->
 
 This plot of all contributions aggregated by month shows the increasing trend of contributions leading up to election day. Other than some periodic dips the trend is increasing from the first half of 2015 through late 2016.
 
-![](P4_final_project_files/figure-html/unnamed-chunk-35-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-46-1.png)<!-- -->
 
 This plot of contributions by week for each candidate shows the two presidential candidates for each respective party rising above the fray during the late stages of the primaries and then through November 2016. 
 
 
-![](P4_final_project_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-47-1.png)<!-- -->
 
 
 This plot is similar to the on above, but we only look at the two eventual major party nominees. Interestingly, Trump's fundraising in Pennsylvania does not start to rise significantly until around May 2016 which seems to conincide with the Pennsylvaia primary which was held on April 26. Clinton's contributions also reach an inflection point at the same time, but her contributions were higher and already rising in the year before the 2016 primary.
 
-![](P4_final_project_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-48-1.png)<!-- -->
 
 This is a similar weekly timeseries plot, comparing number of weekly transactions for the two candidates.
 
 
 
 
-![](P4_final_project_files/figure-html/unnamed-chunk-38-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/unnamed-chunk-49-1.png)<!-- -->
 
 # Analysis
 
@@ -486,19 +577,19 @@ From the timeseries plots above, we see some interesting trends. We see the gene
 In my opinion, these were the three most interesting plots from EDA: 1) Net Donations by Candidate, 2) Fraction of Contributions to Democratic Party by Zipcode, and 3) Candidate Contributions by Month.
 
 ### Plot One
-![](P4_final_project_files/figure-html/Plot_One-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/Plot_One-1.png)<!-- -->
 
 ### Description One
 For total net contributions, Hillary Clinton dominates the landscape, out-raising all of her opponents and more than doubling the total of Donald Trump within the state. Republican candidates, however, comprise 8 of the top 10 candidates, illustrating the larger field in that party's primary for this election cycle.
 
 ### Plot Two
-![](P4_final_project_files/figure-html/Plot_Two-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/Plot_Two-1.png)<!-- -->
 
 ### Description Two
 This plot helps show the relative contribution support of Democratic Candidates over teh state. We see stronger financial Democratic support especially in the East portion of the state near Philadelphia. Pittsburg also appears to have a cluster of zipcodes leaning Democratic, but seems more balanced, politically. The visualizaiton appears to support the conventional wisdom that dense urban areas tend to support the Democratic Party whereas exurb and rural regions tend to support the Republican party. It would be interesting to compare this plot for the previous election cycles where Pennsylvania voted Democratic.
 
 ### Plot Three
-![](P4_final_project_files/figure-html/Plot_Three-1.png)<!-- -->
+![](P4_final_project_v3_files/figure-html/Plot_Three-1.png)<!-- -->
 
 ### Description Three
 This plot of monthly contribution totals for each nominee shows Hillary dominating Donald Trump within the state. Trump's fundraising looks to plateau by June of 2016, whereas Hillary is able to ride another fundraising bump in Septeber and October before the general election.

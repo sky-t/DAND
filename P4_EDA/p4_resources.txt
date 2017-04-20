@@ -8,3 +8,7 @@ http://rforpublichealth.blogspot.com/2015/10/mapping-with-ggplot-create-nice.htm
 http://ggplot2.tidyverse.org/reference/geom_map.html
 https://cran.r-project.org/web/packages/ggthemes/vignettes/ggthemes.html
 https://github.com/jennybc/happy-git-with-r/blob/master/30_workflow-first-use-rmd-and-github.Rmd
+http://stackoverflow.com/questions/11985799/converting-date-to-a-day-of-week-in-r
+http://stackoverflow.com/questions/27766054/getting-the-top-values-by-group-using-dplyr
+http://stackoverflow.com/questions/10576095/formatting-dates-with-scale-x-date-in-ggplot2
+http://www.cookbook-r.com/Graphs/
