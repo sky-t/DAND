@@ -1,0 +1,6 @@
+As described in my project report introduction, I chose to investigate the OSM data for the city of Portland, OR where I currently reside. Since this is where I live and care deeply about, I hope to continue to work with OSM data in the future and contribute to open data projects in Portland.
+
+OSM link for Portland, OR:
+https://www.openstreetmap.org/search?query=portland%2C%20or#map=12/45.5234/-122.6762
+
+Portland, OR is a medium size city on the West Coast of the USA, located in a region commonly known as the Pacific Northwest. In recent years, it has been popularly parodied in the TV series, Portlandia, which is a satirical look at some of the more extreme parts of Portaland's urban liberal culture.

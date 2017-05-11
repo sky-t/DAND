@@ -1,0 +1,9 @@
+List Of Resources Used for DAND P3 Project (OpenStreetMap Data Case Study)
+Scott Tse
+2016-11-17
+
+1. https://gist.github.com/carlward/54ec1c91b62a5f911c42#file-sample_project-md
+2. https://discussions.udacity.com/t/first-step-how-to-decide-what-data-to-audit/159363
+3. https://discussions.udacity.com/t/question-on-project-auditing-the-data/194334/3
+4. https://github.com/hackoregon/hack-university-database-engineering/blob/master/Class%20Notes/Session%205%20-%20Normalization.md
+5. http://wiki.openstreetmap.org/wiki/TIGER
