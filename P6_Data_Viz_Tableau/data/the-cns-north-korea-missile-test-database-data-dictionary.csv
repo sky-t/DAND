@@ -1,0 +1,33 @@
+FileName,TableName,ColumnName,Type,Description
+north_korea_missile_tests_database_050217.xlsx,,,file,"""The database captures advancements in North Korea's missile program by documenting all such tests since the first one occurred in April 1984, and will be routinely updated as events warrant."""
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,,table,
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,F1,column,
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,Date,column,"This is the date the launch is believed to have occurred. An exact date is not known for every launch. For tests prior to 1993, the date should be interpreted as an approximation. 
+"
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,Date Entered/Updated,column,This is the date the test was recorded or updated. Sometime new information on old tests comes out well after the test occurred. When that happens older entries might be changed to account for this new information.
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,Missile Name,column,This is the missile type believed to have been launched. In some cases there may be confusion or uncertainty regarding the exact type launch. 
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,Missile Type,column,"This is what category the missile falls under, example: Short Range Ballistic Missile (SRBM), Mid-Range Ballistic Missile (MRBM), Intermediate-Range Ballistic Missile (IRBM), Intercontinental Ballistic Missile (ICBM)..."
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,Launch Agency/Authority,column,This is the entity which carried out the launch. In North Korea’s case this is almost always unknown or extremely unclear.
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,Facility Name,column,This is the name of the site the launch was carried out at. This should be interpreted as a general location for each test and not as an exact location. 
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,Facility Location,column,"An approximate location of the facility
+"
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,Other Name,column,Because North Korea does not often disclose the names of its secret missile testing and launch facilities there are often multiple names used in practice. This lists some of the common alternative names used to describe the launch location.
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,Facility Latitude,column,
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,Facility Longitude,column,
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,Landing Location,column,An approximate location for where the missile landed. For tests which fail almost immediately after launch and for tests in which the payload enters orbit this is listed as N/A.
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,Apogee (km),column,
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,Distance Travelled (km),column,
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,Confirmation Status,column,For events where there is strong reason to believe the test took place as described in the database the test is marked as Confirmed...
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,Success,column," Unknown = not enough information regarding the test to be sure of its outcome. Failure = catastrophic failure during the flight test of the missile, i.e. the missile exploding. Success = as that not happening during the flight test..."
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,Additional Information,column,"Provides additional information regarding the test. Information might be about the significance of the test, information considered important but which otherwise did not fall into one of the former categories..."
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,Source(s),column,"A link to the source(s) used to generate the information for the test is also provided. Sources used for this database are scholarly sources, news reports, government press releases, government reports, and reports by international org..."
+north_korea_missile_tests_database_050217.xlsx,Missile Tests,Facility Location,column,"An approximate location of the facility
+"
+north_korea_missile_tests_database_050217.xlsx,Facilities,,table,
+north_korea_missile_tests_database_050217.xlsx,Facilities,Facility,column,
+north_korea_missile_tests_database_050217.xlsx,Facilities,Date of First Test,column,
+north_korea_missile_tests_database_050217.xlsx,Facilities,Date of Most Recent Test,column,
+north_korea_missile_tests_database_050217.xlsx,Facilities,Number of Tests,column,
+north_korea_missile_tests_database_050217.xlsx,Facilities,Latitude,column,
+north_korea_missile_tests_database_050217.xlsx,Facilities,Longitude,column,
+north_korea_missile_tests_database_050217.xlsx,Facilities,Location,column,
