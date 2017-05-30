@@ -5,7 +5,7 @@ Scott Tse
 
 ### Background
 
-I chose to create a visualization of North Korean Missile Test data obtained from [data.world](https://data.world/)
+I chose to create a visualization of North Korean Missile Test data obtained from [data.world](https://data.world/). The data can also be accessed in this repo in the [data](https://github.com/sky-t/DAND/tree/master/P6_Data_Viz_Tableau/data) folder. 
 
 Click [here](https://public.tableau.com/profile/scott.tse#!/vizhome/UdacityDANDP6Projectv2/Story1) for a link to the final version.
 
